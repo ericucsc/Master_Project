@@ -39,109 +39,127 @@
     <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
     <script>
         var margin = 30;
-        var height = 350 - margin * 2;
-        var width = 1500 - margin * 2;
+        var permTopPadding = 400;
+        var svgHeight = 800;
+        var barChartHeight = 300;
+        var barChartWidth = 450;
+        var width = 1300 - margin * 2;
         var mapSize = 0.5;
         var barLeftPadding = 150;
         var mapLeftPadding = 800;
-        // scale for application counts
-        var appScale = d3.scaleLinear()
-            .domain([28, 29562])
-            .range([0, 6])
-            .clamp(true);
-        // set the ranges for bar chart
+        // set the size and ranges for bar chart
         var y = d3.scaleBand()
-                  .range([height, 0])
+                  .range([permTopPadding + barChartHeight, permTopPadding])
                   .padding(0.1);
-        var x = d3.scaleLinear()
-                  .range([0, 600]);
+        var x = d3.scaleLinear()    //设为20考虑到bar上的数字不能被挤到太左
+                  .range([20, barChartWidth]);
         // create svg for barchart and map
         var svg = d3.select("body").append("svg")
                     .attr("width", width + 2*margin)
-                    .attr("height", height + 2*margin);
+                    .attr("height", svgHeight);
         var svgBar = svg.append("g").attr("id", "svgBar");
         var svgMap = svg.append("g").attr("id", "svgMap");
         var mapPath = d3.geoPath();
         var tooltip = d3.select("body").append("div")
             .attr("class", "tooltip")
             .style("display", "none");
+        
+        plotPERM();
+        
+        
+        function plotPERM() {
+            d3.csv("./permMap.csv", function(data) {
 
-        
-        
-        
-        d3.csv("./permMap.csv", function(data) {
-            
-            // get the permData from csv
-            var permData = {};
-            for (i = 0; i < data.length; i++) {
-                permData[data[i].stateCode] = data[i];
-            }            
-            
-            // draw the map from json file and information from permData
-            // and draw the bar chart according to click event
-            d3.json("https://d3js.org/us-10m.v1.json", function(error, us) {
-                if (error) throw error;
-                
-                // draw the default bar chart here
-                generateBarChart('CA');
-                
-                // mesh geo data with permData
-                var statesData = new Array();
-                var stateGeoData = topojson.feature(us, us.objects.states).features;
-                for (i = 0; i < stateGeoData.length; i++) {
-                    var newObject = stateGeoData[i];
-                    if (newObject.id != "11") {
-                        newObject.appCount = permData[parseInt(newObject.id)].applicantsCount;
-                        newObject.stateName = permData[parseInt(newObject.id)].stateName;
-                        newObject.stateAbbr = permData[parseInt(newObject.id)].stateAbbr;
-                        statesData.push(newObject);
+                // get the permData from csv
+                var permData = {};
+                for (i = 0; i < data.length; i++) {
+                    permData[data[i].stateCode] = data[i];
+                }            
+
+                // draw the map from json file and information from permData
+                // and draw the bar chart according to click event
+                d3.json("https://d3js.org/us-10m.v1.json", function(error, us) {
+                    if (error) throw error;
+
+                    // draw the default bar chart here
+                    generateBarChart("perm", 'CA');
+
+                    // mesh geo data with permData
+                    var statesData = new Array();
+                    var stateGeoData = topojson.feature(us, us.objects.states).features;
+                    for (i = 0; i < stateGeoData.length; i++) {
+                        var newObject = stateGeoData[i];
+                        if (newObject.id != "11") {
+                            newObject.appCount = permData[parseInt(newObject.id)].applicantsCount;
+                            newObject.stateName = permData[parseInt(newObject.id)].stateName;
+                            newObject.stateAbbr = permData[parseInt(newObject.id)].stateAbbr;
+                            statesData.push(newObject);
+                        }
                     }
-                }
 
-                var color = d3.scaleThreshold()
-                        .domain(d3.range(0, 6))
-                        .range(d3.schemeOranges[9]);
+                    var qColor = d3.scaleQuantile()
+                            .domain([0, 400, 800, 1300, 6000, 13000])
+                            .range(["#fee5d9","#fcae91","#fb6a4a","#de2d26","#a50f15"]);
 
-                svgMap.append("g")
-                      .attr("class", "states")
-                    .selectAll("path")
-                    .data(statesData)
-                    .enter().append("path")
-                      .attr("transform", "translate(" + mapLeftPadding + ",0) scale(" + mapSize + ")")
-                      .attr("d", mapPath)
-                      .attr("fill", function(d) {
-                            return color(appScale(d.appCount));
-                        })
-                      .on("mouseover", function() {
-                          tooltip.style("display", "inline");
-                        })
-                      .on("mousemove", function(d) {
-                          tooltip.html("<strong>" + d.stateName + "</strong></br></br>" + parseInt(d.appCount).toLocaleString() + "</br>Applicants")
-                             .style("left", (d3.event.pageX - 30) + "px")
-                             .style("top", (d3.event.pageY - 45) + "px");
-                        })
-                      .on("mouseout", function() {
-                          tooltip.style("display", "none");
-                        })
-                      .on("click", function(d) {
-                            var svgBarElement = document.getElementById("svgBar");
-                            while (svgBarElement.firstChild) {
-                                svgBarElement.removeChild(svgBarElement.firstChild);
-                            }
-                            generateBarChart(d.stateAbbr);
-                        });
+                    svgMap.append("g")
+                          .attr("class", "states")
+                        .selectAll("path")
+                        .data(statesData)
+                        .enter().append("path")
+                          .attr("transform", "translate(" + mapLeftPadding + "," + permTopPadding + ") scale(" + mapSize + ")")
+                          .attr("d", mapPath)
+                          .attr("fill", function(d) {
+                                return qColor(d.appCount);
+                            })
+                          .on("mouseover", function() {
+                              tooltip.style("display", "inline");
+                            })
+                          .on("mousemove", function(d) {
+                              tooltip.html("<strong>" + d.stateName + "</strong></br>" + parseInt(d.appCount).toLocaleString() + "</br>Green Card</br>Applicants")
+                                 .style("left", (d3.event.pageX - 30) + "px")
+                                 .style("top", (d3.event.pageY - 45) + "px");
+                            })
+                          .on("mouseout", function() {
+                              tooltip.style("display", "none");
+                            })
+                          .on("click", function(d) {
+                                var svgBarElement = document.getElementById("svgBar");
+                                while (svgBarElement.firstChild) {
+                                    svgBarElement.removeChild(svgBarElement.firstChild);
+                                }
+                                generateBarChart("perm", d.stateAbbr);
+                            });
 
-                svgMap.append("path")
-                      .attr("transform", "translate(" + mapLeftPadding + ",0) scale(" + mapSize + ")")
-                      .attr("class", "state-borders")
-                      .attr("d", mapPath(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; })));
+                    svgMap.append("path")
+                          .attr("transform", "translate(" + mapLeftPadding + "," + permTopPadding + ") scale(" + mapSize + ")")
+                          .attr("class", "state-borders")
+                          .attr("d", mapPath(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; })));
+                });
             });
-            
-        });
+        }
         
-        function generateBarChart(stateAbbr) {
+        function generateBarChart(permORh1b, stateAbbr) {
+            // initialize variables depending on we are ploting for perm or h1b
+            var xAxisHeight;
+            var filePath;
+            if (permORh1b == "perm") {
+                xAxisHeight = barChartHeight + permTopPadding;
+                filePath = "./prepareData/barData/PermComByStates/";
+            } else {
+                xAxisHeight = barChartHeight;
+                filePath = "./prepareData/barData/H1BComByStates/";
+            }
+            
+            //add chart title below x axis
+            var text1 = svgBar.append("text")
+                        .attr("transform", "translate(" + (barLeftPadding + 30) + ", " + (permTopPadding - 20) + ")")
+                        .text("Top 15 " + stateAbbr + " Companies");
+            var text2 = svgBar.append("text")
+                        .attr("transform", "translate(" + (barLeftPadding + 30) + ", " + (permTopPadding + barChartHeight + 50) + ")")
+                        .text("Green Card Applicants");
+            
             //draw the bar chart
-            d3.csv("./prepareData/barData/PermComByStates/" + stateAbbr + ".csv", function(data) {
+            d3.csv(filePath + stateAbbr + ".csv", function(data) {
                  data.forEach(function(d) {
                     d.new_foreign_worker_count = +d.new_foreign_worker_count;
                   });
@@ -164,13 +182,27 @@
 
                 // add the x Axis
                 svgBar.append("g")
-                  .attr("transform", "translate(" + barLeftPadding + "," + height +")")
+                  .attr("transform", "translate(" + barLeftPadding + "," + xAxisHeight + ")")
                   .call(d3.axisBottom(x));
 
                 // add the y Axis
                 svgBar.append("g")
                   .attr("transform", "translate("+ barLeftPadding + ", 0)")
                   .call(d3.axisLeft(y));
+                
+                // add values on each bar
+                svgBar.append("g")
+                    .selectAll("text")
+                    .data(data)
+                    .enter().append("text")
+                        .attr("transform", "translate(" + barLeftPadding + ", 0)")
+                        .attr("class", "valueLabel")
+                        .attr("x", function(d) {return x(d.new_foreign_worker_count); } )
+                        .attr("y", function(d) { return y(d.Company) + 8; })
+                        .attr("dx", -5)
+                        .attr("dy", ".36em")
+                        .attr("text-anchor", "end")
+                        .text(function(d) {return d.new_foreign_worker_count; } );
             });
         }
         

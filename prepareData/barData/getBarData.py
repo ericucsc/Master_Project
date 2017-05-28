@@ -27,7 +27,7 @@ def top20perm():
         with open('./PermComByStates_original/' + filename, 'rb') as csvfile:
             reader = csv.reader(x.replace('\0', '') for x in csvfile)
             company_data = list(reader)
-            title_row = company_data.pop(0)  # extract the title row
+            company_data.pop(0)  # delete the title row
             company_data.sort(key=lambda x: int(x[1]), reverse=True)
             if filename != 'WY.csv':
                 company_data = company_data[:15]  # truncate to 15 companies
@@ -39,6 +39,7 @@ def top20perm():
                     newVal += dup
                     dup += 'a'
                 eachRow[0] = newVal  # truncate each company name to its first word
+            title_row = ["Company", "new_foreign_worker_count"]
             company_data.insert(0, title_row)  # put back the title row
 
         with open('./PermComByStates/' + filename, 'wb') as csvfile:
@@ -52,7 +53,7 @@ def top20h1b():
         with open('./H1BComByStates_original/' + filename, 'rb') as csvfile:
             reader = csv.reader(x.replace('\0', '') for x in csvfile)
             company_data = list(reader)
-            title_row = company_data.pop(0)  # extract the title row
+            company_data.pop(0)  # delete the title row
             company_data.sort(key=lambda x: int(x[1]), reverse=True)
             company_data = company_data[:15]  # truncate to 15 companies
             company_data.sort(key=lambda x: int(x[1]), reverse=False)  # reverse sort the 15 companies
@@ -63,6 +64,7 @@ def top20h1b():
                     newVal += dup
                     dup += 'a'
                 eachRow[0] = newVal  # truncate each company name to its first word
+            title_row = ["Company", "new_foreign_worker_count"]
             company_data.insert(0, title_row)  # put back the title row
 
         with open('./H1BComByStates/' + filename, 'wb') as csvfile:

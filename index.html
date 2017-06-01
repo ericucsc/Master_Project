@@ -45,6 +45,14 @@
         font-size: 14pt;
         width: 1150px;
     }
+    
+    .authorInfo {
+        position: absolute;
+        left: 80px;
+        text-align:center;
+        font-size: 12pt;
+        width: 1150px;
+    }
 </style>
 
 <body>
@@ -56,6 +64,9 @@
     <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
     <script>
         var margin = 30;
+        var h1bDesTopPadding = 90;
+        var permDesTopPadding = 600;
+        var authorInfoTopPadding = 1100;
         var permTopPadding = 620;
         var h1bTopPadding = 100;
         var legendLeftPaddingToMap = 250;
@@ -92,20 +103,32 @@
         plotMapAndBar("h1b");
         plotMapAndBar("perm");
         addDescription();
+        addAuthorInfo();
+        
+        function addAuthorInfo() {
+            var authorInfoDIV = d3.select("body").append("div")
+                       .attr("class", "authorInfo")
+                       .style("top", authorInfoTopPadding + "px");
+            
+            authorInfoDIV.append('div').html("Created by: <a href='https://www.linkedin.com/in/yanzhongli' target='_blank'>Yanzhong Li</a> &nbsp &nbsp Advised by: <a href='https://www.soe.ucsc.edu/people/lodha' target='_blank'>Suresh Lodha</a>");
+            authorInfoDIV.append('div').html("Data Source: <a href='https://travel.state.gov/content/visas/en/law-and-policy/statistics/immigrant-visas.html' target='_blank'>Immigrant Visa Stats</a>, <a href='https://travel.state.gov/content/dam/visas/employment-cut-off-dates/EmploymentChina.pdf' target='_blank'>Final Action Dates</a>, <a href='https://travel.state.gov/content/visas/en/law-and-policy/bulletin/2017/visa-bulletin-for-june-2017.html' target='_blank'>Visa Bulletin</a>, <a href='http://www.nolo.com/legal-encyclopedia/if-priority-date-current-moved-backward-can-i-still-green-card.html' target='_blank'>Retrogression Example</a>");
+            
+            
+        }
         
         function addDescription() {
             // H1B description
             var h1bDes = "The distribution of H1B applicants across the U.S. in 2016 is shown on map. California and Texas, being the most foreign-worker-friendly states, received 183,652 applicants for H1B visas. The IT company INFOSYS sponsored for 25,405 employees, followed by Capgemini, Tata and then IBM who sponsored for 12,381 H1B applicants.";
             d3.select("body").append("div")
                        .attr("class", "description")
-                       .style("top", "90px")
+                       .style("top", h1bDesTopPadding + "px")
 	                   .html(h1bDes);
             
             // PERM description
             var permDes = "F1 Student with a Bachelor's or Master's degree is most likely to apply for a Green Card of EB2/3 type. There are in total 125,823 EB2/3 applicants in 2016, and 51.88% of them work in state of California, Texas, New Jersy or New York. The I.T. Company COGNIZANT was ranked top 1 in sponsoring for 4,271 of its employees, most of whom work in Texas.";
             d3.select("body").append("div")
                        .attr("class", "description")
-                       .style("top", "600px")
+                       .style("top", permDesTopPadding + "px")
 	                   .html(permDes);
         }
         

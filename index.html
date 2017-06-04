@@ -112,6 +112,7 @@
             
             authorInfoDIV.append('div').html("Created by: <a href='https://www.linkedin.com/in/yanzhongli' target='_blank'>Yanzhong Li</a> &nbsp &nbsp Advised by: <a href='https://www.soe.ucsc.edu/people/lodha' target='_blank'>Suresh Lodha</a>");
             authorInfoDIV.append('div').html("Data Source: <a href='https://travel.state.gov/content/visas/en/law-and-policy/statistics/immigrant-visas.html' target='_blank'>Immigrant Visa Stats</a>, <a href='https://travel.state.gov/content/dam/visas/employment-cut-off-dates/EmploymentChina.pdf' target='_blank'>Final Action Dates</a>, <a href='https://travel.state.gov/content/visas/en/law-and-policy/bulletin/2017/visa-bulletin-for-june-2017.html' target='_blank'>Visa Bulletin</a>, <a href='http://www.nolo.com/legal-encyclopedia/if-priority-date-current-moved-backward-can-i-still-green-card.html' target='_blank'>Retrogression Example</a>");
+            authorInfoDIV.append('div').html("May 30th, 2017 @UCSC");
             
             
         }
@@ -172,7 +173,7 @@
                     if (error) throw error;
 
                     // draw the default bar chart here
-                    generateBarChart(permORh1b, 'CA');
+                    generateBarChart(permORh1b, 'default');
 
                     // mesh geo data with permData
                     var statesData = new Array();
@@ -277,57 +278,67 @@
             }
             var xAxisHeight = barChartHeight + setTopPadding;
             
-            //add chart title below x axis
-            var chartTitle = svgBar.append("text")
-                        .attr("transform", "translate(" + (barLeftPadding + 30) + ", " + (setTopPadding + barChartHeight + 35) + ")")
-                        .text(titleText);
+            if (stateAbbr == 'default') {
+                var chartTitle = svgBar.append("text")
+                        .attr("transform", "translate(" + (barLeftPadding) + ", " + (setTopPadding + barChartHeight/2) + ")")
+                        .style("font", "25px sans-serif")
+                        .text("Please choose a state on the map -->");
+            } else {
+                //add chart title below x axis
+                var chartTitle = svgBar.append("text")
+                            .attr("transform", "translate(" + (barLeftPadding + 30) + ", " + (setTopPadding + barChartHeight + 35) + ")")
+                            .text(titleText);
+
+                //draw the bar chart
+                d3.csv(filePath + stateAbbr + ".csv", function(data) {
+                     data.forEach(function(d) {
+                        d.new_foreign_worker_count = +d.new_foreign_worker_count;
+                      });
+
+                    // Scale the range of the data in the domains
+                    x.domain([0, d3.max(data, function(d){ return d.new_foreign_worker_count; })])
+                    y.domain(data.map(function(d) { return d.Company; }))
+
+                    // append the rectangles for the bar chart
+                    svgBar.append("g")
+                      .selectAll(".bar")
+                      .data(data)
+                      .enter()
+                      .append("rect")
+                          .attr("transform", "translate(" + barLeftPadding + ", " + setTopPadding + ")")
+                          .attr("class", "bar")
+                          .attr("width", function(d) {return x(d.new_foreign_worker_count); } )
+                          .attr("y", function(d) { return y(d.Company); })
+                          .attr("height", y.bandwidth());
+
+                    // add the x Axis
+                    svgBar.append("g")
+                      .attr("transform", "translate(" + barLeftPadding + "," + xAxisHeight + ")")
+                      .call(d3.axisBottom(x));
+
+                    // add the y Axis
+                    svgBar.append("g")
+                      .attr("transform", "translate("+ barLeftPadding + ", " + setTopPadding + ")")
+                      .call(d3.axisLeft(y));
+
+                    // add value labels on each bar
+                    svgBar.append("g")
+                        .selectAll("text")
+                        .data(data)
+                        .enter().append("text")
+                            .attr("transform", "translate(" + barLeftPadding + ", " + setTopPadding + ")")
+                            .attr("class", "valueLabel")
+                            .attr("x", function(d) {return x(d.new_foreign_worker_count); } )
+                            .attr("y", function(d) { return y(d.Company) + 8; })
+                            .attr("dx", -5)
+                            .attr("dy", ".36em")
+                            .attr("text-anchor", "end")
+                            .text(function(d) {return d.new_foreign_worker_count; } );
+                });
+            }
             
-            //draw the bar chart
-            d3.csv(filePath + stateAbbr + ".csv", function(data) {
-                 data.forEach(function(d) {
-                    d.new_foreign_worker_count = +d.new_foreign_worker_count;
-                  });
-                
-                // Scale the range of the data in the domains
-                x.domain([0, d3.max(data, function(d){ return d.new_foreign_worker_count; })])
-                y.domain(data.map(function(d) { return d.Company; }))
-
-                // append the rectangles for the bar chart
-                svgBar.append("g")
-                  .selectAll(".bar")
-                  .data(data)
-                  .enter()
-                  .append("rect")
-                      .attr("transform", "translate(" + barLeftPadding + ", " + setTopPadding + ")")
-                      .attr("class", "bar")
-                      .attr("width", function(d) {return x(d.new_foreign_worker_count); } )
-                      .attr("y", function(d) { return y(d.Company); })
-                      .attr("height", y.bandwidth());
-
-                // add the x Axis
-                svgBar.append("g")
-                  .attr("transform", "translate(" + barLeftPadding + "," + xAxisHeight + ")")
-                  .call(d3.axisBottom(x));
-
-                // add the y Axis
-                svgBar.append("g")
-                  .attr("transform", "translate("+ barLeftPadding + ", " + setTopPadding + ")")
-                  .call(d3.axisLeft(y));
-                
-                // add value labels on each bar
-                svgBar.append("g")
-                    .selectAll("text")
-                    .data(data)
-                    .enter().append("text")
-                        .attr("transform", "translate(" + barLeftPadding + ", " + setTopPadding + ")")
-                        .attr("class", "valueLabel")
-                        .attr("x", function(d) {return x(d.new_foreign_worker_count); } )
-                        .attr("y", function(d) { return y(d.Company) + 8; })
-                        .attr("dx", -5)
-                        .attr("dy", ".36em")
-                        .attr("text-anchor", "end")
-                        .text(function(d) {return d.new_foreign_worker_count; } );
-            });
+            
+            
         }
         
     </script>
